@@ -2,6 +2,8 @@ from enum import Enum
 
 class TokenType(Enum):
     MUL = 0
+    DO = 1
+    DONT = 2
 
 class Parser:
     def __init__(self, fileName):
@@ -12,6 +14,7 @@ class Parser:
         self.pos = 0
         self.sum = 0 # sum of all mul expressions
         self.currExpr = (None, None, None) # can be a tuple (mul, num1, num2)
+        self.enabled = True # whether or not to consume, based on do/don't
 
     # increment pos by 1
     # if EOF, return answer and exit
@@ -52,6 +55,27 @@ class Parser:
     # give current context (i.e. matching chars that may produce a token)
     def parse(self, context):
         while not self.is_end(self.pos):
+            if context in ["d", "do", "do(", "don", "don'", "don't", "don't("]:
+                self.discard()
+                context = context + self.source[self.pos]
+                continue
+
+            if context == "do()":
+                print(context)
+                self.enabled = True
+                self.discard()
+                if not self.is_end(self.pos):
+                    context = self.source[self.pos]
+                continue
+
+            if context == "don't()":
+                print(context)
+                self.enabled = False
+                self.discard()
+                if not self.is_end(self.pos):
+                    context = self.source[self.pos]
+                continue
+
             match (self.currExpr):
                 case (None, None, None):
                     match context:
@@ -91,7 +115,6 @@ class Parser:
                             continue
 
                 case (TokenType.MUL, int(), None):
-                # case (TokenType.MUL, _, None):
                     match context:
                         case _ if context.isdigit():
                             self.advance()
@@ -100,7 +123,12 @@ class Parser:
 
                         case _ if context.endswith(")"):
                             self.currExpr = (self.currExpr[0], self.currExpr[1], int(context[:-1]))
-                            self.consume()
+
+                            if self.enabled:
+                                self.consume()
+                            else:
+                                self.discard()
+
                             context = self.source[self.pos]
                             continue
 
@@ -111,6 +139,5 @@ class Parser:
 
         return self.sum
 
-# parser = Parser("day3-input1.txt")
-parser = Parser("day3-input2.txt")
+parser = Parser("day3-input.txt")
 print(parser.parse(""))
