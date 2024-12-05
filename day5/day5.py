@@ -1,5 +1,4 @@
 from math import floor
-from random import shuffle
 
 class UpdateValidator:
     def __init__(self, fileName):
@@ -39,6 +38,7 @@ class UpdateValidator:
     def getMidOfUpdate(self, update):
         return update[floor(len(update)/2)]
 
+    # only corrects 1 error max
     def fixInvalidUpdate(self, update):
         update_copy = update.copy()
         while not self.updateIsValid(update_copy):
