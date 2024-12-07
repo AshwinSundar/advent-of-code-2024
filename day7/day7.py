@@ -1,4 +1,6 @@
 from itertools import product
+from random import shuffle
+import time
 
 def getAnswer(line):
     return int(line.split(":")[0])
@@ -22,8 +24,10 @@ def evaluateLeftToRight(operands, operators):
     return result
 
 def tryCombinations(operands, ans):
-    operators = ['+', '*', "||"]
+    # operators = ['+', '*'] # for part 1
+    operators = ['||', '*', '+'] # for part 2
     allCombinations = product(operators, repeat=len(operands) - 1)
+    shuffle(list(allCombinations)) # shuffling cuts the runtime in half
 
     for ops in allCombinations:
         result = evaluateLeftToRight(operands, ops)
@@ -34,6 +38,7 @@ def tryCombinations(operands, ans):
 source = getSource("input.txt").splitlines()
 sum = 0
 
+start_time = time.time()
 for line in source:
     ans = getAnswer(line)
     operands = getOperands(line)
@@ -42,3 +47,6 @@ for line in source:
         sum += ans
 
 print(sum)
+print("---%s seconds ---" % (time.time() - start_time))
+# Part 1 ~ 0.07 seconds
+# Part 2 ~ 6.0 seconds
