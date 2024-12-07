@@ -1,6 +1,7 @@
 from enum import Enum
-from typing import List
+from typing import List, Set, Tuple
 import numpy as np
+from copy import deepcopy
 
 class Point:
     def __init__(self, x, y):
@@ -31,6 +32,7 @@ class Guard:
             self.matrix = self.convertToMatrix(self.source)
 
         self.pos: Point = self.findFirstChar(startChar)
+        self.startPos = self.pos  # Store starting position
         self.maxX = len(self.matrix[0]) - 1
         self.maxY = len(self.matrix) - 1
         self.path: List[Point] = [self.pos]
@@ -43,6 +45,8 @@ class Guard:
                 self.direction = Direction.LEFT
             case "v":
                 self.direction = Direction.DOWN
+        self.startDirection = self.direction  # Store starting direction
+
 
     def convertToMatrix(self, input):
         return np.array([list(line) for line in input.strip().split('\n')])
@@ -96,6 +100,76 @@ class Guard:
     def findStart(self, startChar):
         self.pos = self.findFirstChar(startChar)
 
+    def checkForLoop(self) -> bool:
+        visited = set()
+        positions = []
+        self.pos = self.startPos
+        self.direction = self.startDirection
+        steps = 0
+        max_steps = 1000  # Large enough to handle the input size
+
+        while steps < max_steps:
+            pos = (self.pos.x, self.pos.y)
+            positions.append(pos)
+
+            # If we've seen this position before, check for a loop
+            if pos in visited:
+                # Find all occurrences of this position
+                indices = [i for i, p in enumerate(positions) if p == pos]
+                for start_idx in indices[:-1]:  # Check all previous occurrences
+                    loop = positions[start_idx:]
+                    # If we have a loop with at least 2 unique positions
+                    if len(set(loop)) > 1:
+                        return True
+
+            visited.add(pos)
+
+            nextPt = addPoints(self.pos, self.direction.value)
+            if (nextPt.x > self.maxX or nextPt.x < 0 or 
+                nextPt.y > self.maxY or nextPt.y < 0):
+                return False
+
+            next = self.matrix[nextPt.y][nextPt.x]
+            if next == "#":
+                self.turnRight()
+                nextPt = addPoints(self.pos, self.direction.value)
+                self.pos = nextPt
+            else:
+                self.pos = nextPt
+
+            steps += 1
+
+        return False  # No loop found within max_steps
+
+    def findValidObstructions(self) -> List[Point]:
+        valid_positions = []
+        original_matrix = deepcopy(self.matrix)
+
+        for y in range(len(self.matrix)):
+            for x in range(len(self.matrix[0])):
+                if original_matrix[y][x] == "." and Point(x, y) != self.startPos:
+                    # Try placing obstruction
+                    self.matrix = deepcopy(original_matrix)
+                    self.matrix[y][x] = "#"
+
+                    # Check if it creates a loop
+                    if self.checkForLoop():
+                        valid_positions.append(Point(x, y))
+                        #print(f"Found valid position at {x}, {y}")  # Debug print
+
+        # Restore original state
+        self.matrix = original_matrix
+        self.pos = self.startPos
+        self.direction = self.startDirection
+
+        return valid_positions
+    
+# Part 1
 guard = Guard("input.txt", "^")
 guard.findEnd()
-print(len(guard.path))
+print(f"Part 1: {len(guard.path)}")
+
+# Part 2 - this didn't end up being correct...
+guard = Guard("input.txt", "^")
+valid_positions = guard.findValidObstructions()
+print(f"Part 2: {len(valid_positions)}")
