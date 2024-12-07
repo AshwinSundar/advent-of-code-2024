@@ -45,9 +45,10 @@ class Guard:
     
     # YOU ARE HERE - you need to keep track of the direction the Guard is facing first, before you can implement this. May need to refactor findStart a bit
     def turnRight(self):
+        pass
 
     def findStart(self, startChar):
-        self.pos = findFirstChar(startChar)
+        self.pos = self.findFirstChar(startChar)
         match startChar:
             case "^":
                 self.direction = Move.UP
