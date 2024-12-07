@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List
 import numpy as np
 
 class Point:
@@ -6,11 +7,18 @@ class Point:
         self.x = x
         self.y = y
 
-    def add(self, p: 'Point'):
-        self.x += p.x
-        self.y += p.y
+    def __str__(self):
+        return f"({self.x}, {self.y})"
 
-class Move(Enum):
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
+def addPoints(a: Point, b: Point):
+    return Point(a.x + b.x, a.y + b.y)
+
+
+
+class Direction(Enum):
     UP = Point(0,-1)
     RIGHT = Point(1,0)
     DOWN = Point(0,1)
@@ -22,8 +30,19 @@ class Guard:
             self.source = data.read()
             self.matrix = self.convertToMatrix(self.source)
 
-        self.pos = self.findFirstChar(startChar)
-        self.totalDistance = 0
+        self.pos: Point = self.findFirstChar(startChar)
+        self.maxX = len(self.matrix[0]) - 1
+        self.maxY = len(self.matrix) - 1
+        self.path: List[Point] = [self.pos]
+        match startChar:
+            case "^":
+                self.direction = Direction.UP
+            case ">": 
+                self.direction = Direction.RIGHT
+            case "<":
+                self.direction = Direction.LEFT
+            case "v":
+                self.direction = Direction.DOWN
 
     def convertToMatrix(self, input):
         return np.array([list(line) for line in input.strip().split('\n')])
@@ -32,33 +51,51 @@ class Guard:
         for line_index, line in enumerate(self.matrix):
             for char_index, char_val in enumerate(line):
                 if char == char_val:
-                    return (line_index, char_index)
-        return None
+                    return Point(char_index, line_index)
+        raise Exception("startChar ", char, " not found.")
 
-    # how far to traverse before reaching endChar
-    # if endChar is not found, must have exceeded bounds - return totalDistance
-    def findLineEnd(self, endChar):
-        sum = 0
-            # self.pos += 
-        pass
+    def walk(self):
+        if self.pos not in self.path:
+            self.path.append(self.pos)
 
-    
-    # YOU ARE HERE - you need to keep track of the direction the Guard is facing first, before you can implement this. May need to refactor findStart a bit
+    def moveNext(self):
+        nextPt = addPoints(self.pos, self.direction.value)
+        if (nextPt.x > self.maxX 
+            or nextPt.x < 0 
+            or nextPt.y > self.maxY 
+            or nextPt.y < 0):
+            return False
+
+        next = self.matrix[nextPt.y][nextPt.x]
+
+        if next == "#":
+            self.turnRight()
+            nextPt = addPoints(self.pos, self.direction.value)
+            self.pos = nextPt
+        else:
+            self.pos = nextPt
+
+        self.walk()
+        return True
+
+    def findEnd(self):
+        while (self.moveNext()):
+            continue
+
     def turnRight(self):
-        pass
+        match self.direction:
+            case Direction.UP:
+                self.direction = Direction.RIGHT
+            case Direction.RIGHT: 
+                self.direction = Direction.DOWN
+            case Direction.DOWN:
+                self.direction = Direction.LEFT
+            case Direction.LEFT:
+                self.direction = Direction.UP
 
     def findStart(self, startChar):
         self.pos = self.findFirstChar(startChar)
-        match startChar:
-            case "^":
-                self.direction = Move.UP
-            case ">": 
-                self.direction = Move.RIGHT
-            case "<":
-                self.direction = Move.LEFT
-            case "v":
-                self.direction =  Move.DOWN
-
 
 guard = Guard("input.txt", "^")
-print(guard.pos)
+guard.findEnd()
+print(len(guard.path))
