@@ -25,7 +25,6 @@ class Antenna:
     def __repr__(self):
         return f"({self.freq}, {self.pos})"
 
-
 class AntennaMap:
     def __init__(self, fileName):
         with open(fileName, "r") as data:
@@ -128,7 +127,6 @@ class AntennaMap:
                 next -= slope
 
         return len(antinodes)
-
 
 am = AntennaMap("input.txt")
 print(f"Part 1: {am.countAntinodes1()}")
